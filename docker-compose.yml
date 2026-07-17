@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+
+# container 1
+  app:
+
+    build: .
+
+    container_name: expense-tracker-app
+
+    ports:
+      - "5001:5000"
+
+    env_file:
+      - .env
+
+    depends_on:
+      - mysql
+
+# container 2
+  mysql:
+
+    image: mysql:8.0
+
+    container_name: expense-tracker-db
+
+    restart: always
+
+    environment:
+
+      MYSQL_ROOT_PASSWORD: root
+
+      MYSQL_DATABASE: expense_tracker_enterprise
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+
+  mysql_data:
+
+  

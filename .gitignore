@@ -1,0 +1,17 @@
+# Python Virtual Environment
+venv/
+
+# Environment Variables
+.env
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Log Files
+*.log
+
+# macOS System Files
+.DS_Store
+
+# this all files shoul not go in github due to security issue that why we add in this .gitignore
