@@ -4,11 +4,15 @@ pipeline {
 
     stages {
 
-        stage('Hello') {
+        stage('Print Workspace') {
 
             steps {
 
-                echo 'Hello Jenkins! My first pipeline is running.'
+                echo 'Pipeline Started'
+
+                sh 'pwd'
+
+                sh 'ls -la'
 
             }
 
