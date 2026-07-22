@@ -2,10 +2,6 @@ pipeline {
 
     agent any
 
-    environment {
-
-    }
-
     stages {
 
         stage('Checkout') {
@@ -13,6 +9,7 @@ pipeline {
             steps {
 
                 sh 'pwd'
+                sh 'ls -la'
 
             }
 
