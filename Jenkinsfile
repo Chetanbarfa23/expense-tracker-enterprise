@@ -5,7 +5,7 @@ pipeline {
     environment {
 
         APP_NAME = "expense-tracker-enterprise"
-        APP_VERSION = "1.0"
+        IMAGE_NAME = "chetan8889/expense-tracker-enterprise"
         DEPLOY_ENV = "DEV"
 
     }
@@ -17,10 +17,11 @@ pipeline {
             steps {
 
                 echo '========== Workspace =========='
-                sh 'pwd'
 
-                echo '========== Repository =========='
-                sh 'ls -la'
+                sh '''
+                    pwd
+                    ls -la
+                '''
 
             }
 
@@ -42,33 +43,140 @@ pipeline {
 
         }
 
-        stage('Environment Variables') {
+        stage('Verify Python') {
 
             steps {
 
-                echo '========== Environment Variables =========='
+                echo '========== Python Verification =========='
 
-                echo "Application Name : ${env.APP_NAME}"
-                echo "Application Version : ${env.APP_VERSION}"
-                echo "Deployment Environment : ${env.DEPLOY_ENV}"
+                sh '''
+                    python3 --version
+                    pip3 --version
+                '''
 
             }
 
         }
 
-        stage('Deploy') {
+        stage('Verify Docker') {
+
+            steps {
+
+                echo '========== Docker Verification =========='
+
+                sh '''
+                    docker --version
+                    docker compose version
+                '''
+
+            }
+
+        }
+
+        stage('Build Docker Image') {
+
+            steps {
+
+                echo '========== Building Docker Image =========='
+
+                sh '''
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                    docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest
+                '''
+
+            }
+
+        }
+
+        stage('List Docker Images') {
+
+            steps {
+
+                echo '========== Docker Images =========='
+
+                sh '''
+                    docker images | grep expense-tracker || true
+                '''
+
+            }
+
+        }
+
+        stage('Docker Hub Login') {
+
+            steps {
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'docker-hub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login \
+                        -u "$DOCKER_USER" \
+                        --password-stdin
+                    '''
+
+                }
+
+            }
+
+        }
+
+        stage('Push Docker Image') {
+
+            steps {
+
+                echo '========== Pushing Docker Image =========='
+
+                sh '''
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                    docker push ${IMAGE_NAME}:latest
+                '''
+
+            }
+
+        }
+
+        stage('Deploy Application') {
 
             when {
+
                 branch 'main'
+
             }
 
             steps {
 
-                echo "Deploying ${env.APP_NAME}"
-                echo "Version : ${env.APP_VERSION}"
-                echo "Environment : ${env.DEPLOY_ENV}"
+                echo '========== Deploying Application =========='
 
-                echo "Deploy Stage Executed"
+                sh '''
+                    docker compose down || true
+                    docker compose up -d --build
+                '''
+
+            }
+
+        }
+
+        stage('Health Check') {
+
+            when {
+
+                branch 'main'
+
+            }
+
+            steps {
+
+                echo '========== Health Check =========='
+
+                sh '''
+                    docker ps
+                '''
 
             }
 
@@ -78,21 +186,33 @@ pipeline {
 
     post {
 
-        always {
-
-            echo "========== Pipeline Finished =========="
-
-        }
-
         success {
 
-            echo "Build Completed Successfully"
+            echo '========================================'
+            echo ' Build Completed Successfully'
+            echo ' Docker Image Built'
+            echo ' Docker Image Pushed'
+            echo ' Application Deployed'
+            echo '========================================'
 
         }
 
         failure {
 
-            echo "Pipeline Failed"
+            echo '========================================'
+            echo ' Pipeline Failed'
+            echo ' Check Console Output'
+            echo '========================================'
+
+        }
+
+        always {
+
+            echo '========== Cleanup =========='
+
+            sh '''
+                docker image prune -f || true
+            '''
 
         }
 
