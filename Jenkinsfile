@@ -2,17 +2,17 @@ pipeline {
 
     agent any
 
+    environment {
+
+    }
+
     stages {
 
-        stage('Print Workspace') {
+        stage('Checkout') {
 
             steps {
 
-                echo 'Pipeline Started'
-
                 sh 'pwd'
-
-                sh 'ls -la'
 
             }
 
