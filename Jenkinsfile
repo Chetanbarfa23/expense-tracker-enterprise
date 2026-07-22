@@ -2,6 +2,14 @@ pipeline {
 
     agent any
 
+    environment {
+
+        APP_NAME = "expense-tracker-enterprise"
+        APP_VERSION = "1.0"
+        DEPLOY_ENV = "DEV"
+
+    }
+
     stages {
 
         stage('Workspace Verification') {
@@ -22,11 +30,27 @@ pipeline {
 
             steps {
 
+                echo '========== Build Information =========='
+
                 echo "Build Number : ${env.BUILD_NUMBER}"
                 echo "Job Name     : ${env.JOB_NAME}"
                 echo "Branch Name  : ${env.BRANCH_NAME}"
                 echo "Workspace    : ${env.WORKSPACE}"
                 echo "Node Name    : ${env.NODE_NAME}"
+
+            }
+
+        }
+
+        stage('Environment Variables') {
+
+            steps {
+
+                echo '========== Environment Variables =========='
+
+                echo "Application Name : ${env.APP_NAME}"
+                echo "Application Version : ${env.APP_VERSION}"
+                echo "Deployment Environment : ${env.DEPLOY_ENV}"
 
             }
 
@@ -40,6 +64,10 @@ pipeline {
 
             steps {
 
+                echo "Deploying ${env.APP_NAME}"
+                echo "Version : ${env.APP_VERSION}"
+                echo "Environment : ${env.DEPLOY_ENV}"
+
                 echo "Deploy Stage Executed"
 
             }
@@ -52,7 +80,7 @@ pipeline {
 
         always {
 
-            echo "Pipeline Finished"
+            echo "========== Pipeline Finished =========="
 
         }
 
