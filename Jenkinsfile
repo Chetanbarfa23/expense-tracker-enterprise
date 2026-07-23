@@ -4,7 +4,7 @@ pipeline {
 
     environment {
 
-        APP_NAME = "expense-tracker-enterprise"
+        APP_NAME   = "expense-tracker-enterprise"
         IMAGE_NAME = "chetan8889/expense-tracker-enterprise"
         DEPLOY_ENV = "DEV"
 
@@ -151,12 +151,36 @@ pipeline {
 
             steps {
 
+                echo '========== Creating .env =========='
+
+                withCredentials([
+
+                    string(credentialsId: 'MYSQL_HOST', variable: 'MYSQL_HOST'),
+                    string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
+                    string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD'),
+                    string(credentialsId: 'MYSQL_DB', variable: 'MYSQL_DB'),
+                    string(credentialsId: 'JWT_SECRET_KEY', variable: 'JWT_SECRET_KEY')
+
+                ]) {
+
+                    sh '''
+cat > .env <<EOF
+MYSQL_HOST=$MYSQL_HOST
+MYSQL_USER=$MYSQL_USER
+MYSQL_PASSWORD=$MYSQL_PASSWORD
+MYSQL_DB=$MYSQL_DB
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+EOF
+'''
+
+                }
+
                 echo '========== Deploying Application =========='
 
                 sh '''
-                    docker compose pull  # take the image from dockerhub
-                    docker compose down  # stop the old container 
-                    docker copose up -d
+                    docker compose pull
+                    docker compose down || true
+                    docker compose up -d
                 '''
 
             }
@@ -190,10 +214,10 @@ pipeline {
         success {
 
             echo '========================================'
-            echo ' Build Completed Successfully'
-            echo ' Docker Image Built'
-            echo ' Docker Image Pushed'
-            echo ' Application Deployed'
+            echo 'Build Completed Successfully'
+            echo 'Docker Image Built'
+            echo 'Docker Image Pushed'
+            echo 'Application Deployed'
             echo '========================================'
 
         }
@@ -201,8 +225,8 @@ pipeline {
         failure {
 
             echo '========================================'
-            echo ' Pipeline Failed'
-            echo ' Check Console Output'
+            echo 'Pipeline Failed'
+            echo 'Check Console Output'
             echo '========================================'
 
         }
