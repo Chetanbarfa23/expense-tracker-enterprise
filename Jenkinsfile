@@ -154,8 +154,9 @@ pipeline {
                 echo '========== Deploying Application =========='
 
                 sh '''
-                    docker compose down || true
-                    docker compose up -d --build
+                    docker compose pull  # take the image from dockerhub
+                    docker compose down  # stop the old container 
+                    docker copose up -d
                 '''
 
             }
