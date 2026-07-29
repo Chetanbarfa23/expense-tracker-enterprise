@@ -1,19 +1,27 @@
+from app.services.s3_service import upload_file_to_s3
+
 from app.repository.expense_repository import (
     add_expense,
     get_expenses,
     update_expense,
     delete_expense
 )
+
+
+# ==========================================
+# ADD EXPENSE
+# ==========================================
+
 def add_expense_service(
     amount,
     category,
     description,
+    receipt,
     user_id
 ):
 
     # Validate Amount
     if not amount:
-
         return {
             "success": False,
             "message": "Amount is required"
@@ -21,25 +29,41 @@ def add_expense_service(
 
     # Validate Category
     if not category:
-
         return {
             "success": False,
             "message": "Category is required"
         }
 
-    # Save Expense
+    # --------------------------------------
+    # Upload Receipt to Amazon S3
+    # --------------------------------------
+
+    receipt_url = None
+
+    if receipt:
+        receipt_url = upload_file_to_s3(receipt)
+
+    # --------------------------------------
+    # Save Expense in Database
+    # --------------------------------------
+
     add_expense(
         amount,
         category,
         description,
+        receipt_url,
         user_id
     )
 
+    # --------------------------------------
     # Success Response
+    # --------------------------------------
+
     return {
         "success": True,
         "message": "Expense Added Successfully"
     }
+
 
 # ==========================================
 # GET ALL EXPENSES
@@ -47,14 +71,13 @@ def add_expense_service(
 
 def get_expenses_service(user_id):
 
-    # Get Expenses From Repository
     expenses = get_expenses(user_id)
 
-    # Return Response
     return {
         "success": True,
         "expenses": expenses
     }
+
 
 # ==========================================
 # UPDATE EXPENSE
@@ -68,23 +91,18 @@ def update_expense_service(
     user_id
 ):
 
-    # Validate Amount
     if not amount:
-
         return {
             "success": False,
             "message": "Amount is required"
         }
 
-    # Validate Category
     if not category:
-
         return {
             "success": False,
             "message": "Category is required"
         }
 
-    # Update Expense
     update_expense(
         expense_id,
         amount,
@@ -93,7 +111,6 @@ def update_expense_service(
         user_id
     )
 
-    # Success Response
     return {
         "success": True,
         "message": "Expense Updated Successfully"

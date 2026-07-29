@@ -1,0 +1,353 @@
+# ============================================================
+# Kubernetes Deployment for Expense Tracker Enterprise
+# ============================================================
+
+# Deployment Flow
+#
+# kubectl apply -f deployment.yaml
+#          │
+#          ▼
+# Kubernetes API Server
+#          │
+#          ▼
+# etcd (Stores Desired State)
+#          │
+#          ▼
+# Deployment Created
+#          │
+#          ▼
+# ReplicaSet Created
+#          │
+#          ▼
+# Pod Created
+#          │
+#          ▼
+# Scheduler Chooses Worker Node
+#          │
+#          ▼
+# kubelet Receives Pod Specification
+#          │
+#          ▼
+# containerd Pulls Docker Image
+#          │
+#          ▼
+# Container Starts
+#          │
+#          ▼
+# Readiness Probe
+#          │
+#          ▼
+# Pod Added To Service
+#          │
+#          ▼
+# Users Can Access Application
+#          │
+#          ▼
+# Liveness Probe
+#          │
+#          ▼
+# If Application Stops Responding
+# Kubernetes Restarts Container
+#
+# ============================================================
+
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  name: expense-tracker
+
+spec:
+
+  # Number of Pods Kubernetes should always maintain
+  replicas: 1
+
+  # ==========================================================
+  # Rolling Update Strategy
+  #
+  # Allows application updates without downtime.
+  #
+  # maxSurge:
+  # Extra Pods Kubernetes can create during update.
+  #
+  # maxUnavailable:
+  # Pods allowed to be unavailable during update.
+  #
+  # replicas = 1
+  #
+  # Old Pod
+  #      +
+  # New Pod
+  #
+  # Once New Pod becomes Ready,
+  # Old Pod is removed.
+  # ==========================================================
+
+  strategy:
+
+    type: RollingUpdate
+
+    rollingUpdate:
+
+      # Create one additional Pod during update
+      maxSurge: 1
+
+      # Never allow zero available Pods
+      maxUnavailable: 0
+
+  # Deployment manages Pods having this label
+  selector:
+    matchLabels:
+      app: expense-tracker
+
+  # Blueprint used to create Pods
+  template:
+
+    metadata:
+
+      labels:
+        app: expense-tracker
+
+    spec:
+
+      containers:
+
+      - name: expense-tracker
+
+        image: chetan8889/expense-tracker-enterprise:latest
+
+        imagePullPolicy: Always
+
+        # Import environment variables from ConfigMap & Secret
+        envFrom:
+
+          - configMapRef:
+              name: expense-tracker-config
+
+          - secretRef:
+              name: expense-tracker-secret
+
+        # Flask application port
+        ports:
+
+          - containerPort: 5000
+
+        # ====================================================
+        # Resource Requests & Limits
+        #
+        # Requests:
+        # Minimum resources reserved.
+        #
+        # Limits:
+        # Maximum resources container can use.
+        #
+        # CPU Limit Crossed
+        # -> CPU is throttled
+        #
+        # Memory Limit Crossed
+        # -> Container Restarted (OOMKilled)
+        # ====================================================
+
+        resources:
+
+          requests:
+
+            cpu: "250m"
+
+            memory: "256Mi"
+
+          limits:
+
+            cpu: "500m"
+
+            memory: "512Mi"
+
+        # ====================================================
+        # Readiness Probe
+        #
+        # Checks whether application is ready
+        # to receive user requests.
+        #
+        # If probe fails:
+        #
+        # ✔ Pod keeps running
+        # ✘ Service does not send traffic
+        # ====================================================
+
+        readinessProbe:
+
+          httpGet:
+
+            path: /health
+
+            port: 5000
+
+          initialDelaySeconds: 10
+
+          periodSeconds: 5
+
+        # ====================================================
+        # Liveness Probe
+        #
+        # Checks whether application is alive.
+        #
+        # If probe fails:
+        #
+        # Kubernetes automatically restarts
+        # the container.
+        # ====================================================
+
+        livenessProbe:
+
+          httpGet:
+
+            path: /health
+
+            port: 5000
+
+          initialDelaySeconds: 20
+
+          periodSeconds: 10
+
+# ============================================================
+# Kubernetes Resource Hierarchy
+#
+# Deployment
+#      │
+#      ▼
+# ReplicaSet
+#      │
+#      ▼
+# Pod
+#      │
+#      ▼
+# Container
+#      │
+#      ▼
+# Flask Application
+# ============================================================
+
+# ============================================================
+# Deployment Responsibilities
+#
+# ✔ Creates ReplicaSet
+# ✔ Creates Pods
+# ✔ Maintains Desired Replica Count
+# ✔ Rolling Updates
+# ✔ Rollbacks
+# ✔ Self-Healing
+# ✔ Scaling
+# ============================================================
+
+# ============================================================
+# Container Responsibilities
+#
+# ✔ Pull Docker Image
+# ✔ Read ConfigMap
+# ✔ Read Secret
+# ✔ Reserve CPU & Memory
+# ✔ Start Flask Application
+# ✔ Listen on Port 5000
+# ✔ Respond to Health Checks
+# ============================================================
+
+# ============================================================
+# Configuration Sources
+#
+# ConfigMap
+#
+# MYSQL_HOST
+# MYSQL_USER
+# MYSQL_DB
+# AWS_REGION
+# S3_BUCKET
+# FLASK_ENV
+#
+# Secret
+#
+# MYSQL_PASSWORD
+# JWT_SECRET_KEY
+# AWS_ACCESS_KEY
+# AWS_SECRET_KEY
+# ============================================================
+
+# ============================================================
+# Resource Allocation
+#
+# Requests
+#
+# CPU    : 250m
+# Memory : 256Mi
+#
+# Limits
+#
+# CPU    : 500m
+# Memory : 512Mi
+#
+# CPU Limit Crossed
+#      │
+#      ▼
+# CPU Throttled
+#
+# Memory Limit Crossed
+#      │
+#      ▼
+# OOMKilled
+#      │
+#      ▼
+# Deployment Creates New Pod
+# ============================================================
+
+# ============================================================
+# Rolling Update Flow
+#
+# Version 1 Running
+#        │
+#        ▼
+# Push Version 2
+#        │
+#        ▼
+# kubectl apply -f deployment.yaml
+#        │
+#        ▼
+# Deployment Creates New Pod
+#        │
+#        ▼
+# Readiness Probe Passes
+#        │
+#        ▼
+# Service Sends Traffic To New Pod
+#        │
+#        ▼
+# Old Pod Deleted
+#
+# No Downtime
+# ============================================================
+
+# ============================================================
+# Health Check Flow
+#
+# Container Starts
+#        │
+#        ▼
+# Readiness Probe
+#        │
+#   ┌────┴─────┐
+#   │          │
+# Ready     Not Ready
+#   │          │
+#   ▼          ▼
+# Traffic   No Traffic
+#
+# --------------------------
+#
+# Liveness Probe
+#        │
+#   ┌────┴─────┐
+#   │          │
+# Healthy    Failed
+#   │          │
+#   ▼          ▼
+# Running   Restart Container
+# ============================================================

@@ -1,0 +1,24 @@
+# API version for Service
+apiVersion: v1
+
+# Create a Service
+kind: Service
+
+metadata:
+  # Service name.                              #.In service we use loadbalancer for ips maintain so user can not face any problem when any pod get dimolish
+  name: expense-tracker-service
+
+spec:
+
+  # Expose the app to the outside world
+  type: LoadBalancer
+
+  # Connect to Pods having this label
+  selector:
+    app: expense-tracker
+
+  ports:
+
+    # External Port → Internal Port
+    - port: 80          # Clients access on Port 80
+      targetPort: 5000  # Forward traffic to Pod Port 5000

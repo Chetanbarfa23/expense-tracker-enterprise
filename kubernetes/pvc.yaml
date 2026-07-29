@@ -1,0 +1,43 @@
+# ============================================================
+# Persistent Volume Claim
+# ============================================================
+#
+# Purpose:
+# Requests storage from Kubernetes.
+#
+# Kubernetes searches for
+# a matching Persistent Volume.
+#
+# Flow
+#
+# Pod
+#   │
+#   ▼
+# PVC
+#   │
+#   ▼
+# PV
+#
+# ============================================================
+
+apiVersion: v1
+
+kind: PersistentVolumeClaim
+
+metadata:
+
+  name: expense-tracker-pvc
+
+spec:
+
+  accessModes:
+
+    - ReadWriteOnce
+
+  resources:
+
+    requests:
+
+      storage: 5Gi
+
+  storageClassName: manual

@@ -1,0 +1,64 @@
+# ============================================================
+# Persistent Volume
+# ============================================================
+#
+# Purpose:
+# Provides permanent storage for Kubernetes Pods.
+#
+# Even if the Pod is deleted,
+# the data remains on the disk.
+#
+# Flow
+#
+# Pod
+#   │
+#   ▼
+# PVC
+#   │
+#   ▼
+# PV
+#   │
+#   ▼
+# AWS EBS Disk
+#
+# ============================================================
+
+apiVersion: v1
+
+kind: PersistentVolume
+
+metadata:
+
+  name: expense-tracker-pv
+
+spec:
+
+  # Total Storage Capacity
+  capacity:
+
+    storage: 5Gi
+
+  # Volume Access Mode
+  accessModes:
+
+    # One Node can mount this volume
+    - ReadWriteOnce
+
+  # How storage is provided
+  persistentVolumeReclaimPolicy: Retain
+
+  # Storage Class
+  storageClassName: manual
+
+  # Local Storage Path
+  #
+  # For learning purposes.
+  #
+  # In production on AWS,
+  # this would normally be an EBS volume
+  #
+  hostPath:
+
+    path: /mnt/data
+
+    

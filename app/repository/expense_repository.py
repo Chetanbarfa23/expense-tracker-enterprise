@@ -9,6 +9,7 @@ def add_expense(
     amount,
     category,
     description,
+    receipt_url,
     user_id
 ):
 
@@ -31,10 +32,12 @@ def add_expense(
                 amount,
                 category,
                 description,
+                receipt_url,
                 user_id
             )
             VALUES
             (
+                %s,
                 %s,
                 %s,
                 %s,
@@ -45,6 +48,7 @@ def add_expense(
                 amount,
                 category,
                 description,
+                receipt_url,
                 user_id
             )
         )
@@ -55,8 +59,8 @@ def add_expense(
     except Exception as e:
 
         logger.error(f"Database Error: {e}")
-
         raise
+
     finally:
 
         if cursor:
@@ -77,13 +81,10 @@ def get_expenses(user_id):
 
     try:
 
-        # Database Connection
         conn = get_connection()
 
-        # Create Cursor
         cursor = conn.cursor()
 
-        # Execute SQL
         cursor.execute(
             """
             SELECT *
@@ -93,15 +94,13 @@ def get_expenses(user_id):
             (user_id,)
         )
 
-        # Fetch All Rows
         expenses = cursor.fetchall()
 
         return expenses
 
     except Exception as e:
 
-        print("Database Error:", e)
-
+        logger.error(f"Database Error: {e}")
         raise
 
     finally:
@@ -130,13 +129,10 @@ def update_expense(
 
     try:
 
-        # Database Connection
         conn = get_connection()
 
-        # Create Cursor
         cursor = conn.cursor()
 
-        # Execute SQL
         cursor.execute(
             """
             UPDATE expenses
@@ -157,13 +153,11 @@ def update_expense(
             )
         )
 
-        # Save Changes
         conn.commit()
 
     except Exception as e:
 
-        print("Database Error:", e)
-
+        logger.error(f"Database Error: {e}")
         raise
 
     finally:
@@ -189,13 +183,10 @@ def delete_expense(
 
     try:
 
-        # Database Connection
         conn = get_connection()
 
-        # Create Cursor
         cursor = conn.cursor()
 
-        # Execute SQL
         cursor.execute(
             """
             DELETE FROM expenses
@@ -209,13 +200,11 @@ def delete_expense(
             )
         )
 
-        # Save Changes
         conn.commit()
 
     except Exception as e:
 
-        print("Database Error:", e)
-
+        logger.error(f"Database Error: {e}")
         raise
 
     finally:

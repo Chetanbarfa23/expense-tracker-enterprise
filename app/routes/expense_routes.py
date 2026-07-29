@@ -16,34 +16,34 @@ expense = Blueprint(
     __name__
 )
 
-
 @expense.route(
     "/add-expense",
     methods=["POST"]
 )
 @jwt_required()
-
 def add_expense():
 
-    data = request.get_json()
+    # Read form data
+    amount = request.form.get("amount")
+    category = request.form.get("category")
+    description = request.form.get("description")
 
-    amount = data.get("amount")
+    # Read uploaded file
+    receipt = request.files.get("receipt")
 
-    category = data.get("category")
-
-    description = data.get("description")
-
+    # Logged-in User
     user_id = get_jwt_identity()
 
+    # Call Service
     result = add_expense_service(
         amount,
         category,
         description,
+        receipt,
         user_id
     )
 
     return result
-
 # ==========================================
 # GET ALL EXPENSES
 # ==========================================
