@@ -77,6 +77,7 @@ pipeline {
 
         stage('Docker Hub Login') {
             steps {
+
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'docker-hub',
@@ -90,12 +91,14 @@ pipeline {
                         -u "$DOCKER_USER" \
                         --password-stdin
                     '''
+
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
+
                 echo '========== Pushing Docker Image =========='
 
                 sh '''
@@ -115,13 +118,51 @@ pipeline {
 
                 echo '========== Deploying to Amazon EKS =========='
 
-                sh '''
+      // withcredentail is used to find the jenkins locker 
+      
+                withCredentials([
+
+                    string(credentialsId: 'MYSQL_HOST', variable: 'MYSQL_HOST'),
+                    string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
+                    string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD'),
+                    string(credentialsId: 'MYSQL_DB', variable: 'MYSQL_DB'),
+                    string(credentialsId: 'JWT_SECRET_KEY', variable: 'JWT_SECRET_KEY'),
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+
+                ]) {
+
+                    sh '''
+
+                    echo "Deleting old Kubernetes Secret..."
+
+                    kubectl delete secret expense-tracker-secret --ignore-not-found
+
+                    echo "Creating Kubernetes Secret..."
+
+                    kubectl create secret generic expense-tracker-secret \
+                      --from-literal=MYSQL_HOST="$MYSQL_HOST" \
+                      --from-literal=MYSQL_USER="$MYSQL_USER" \
+                      --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
+                      --from-literal=MYSQL_DB="$MYSQL_DB" \
+                      --from-literal=JWT_SECRET_KEY="$JWT_SECRET_KEY" \
+                      --from-literal=AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+                      --from-literal=AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+
+                    echo "Applying Kubernetes Manifests..."
+
                     kubectl apply -f kubernetes/
 
-                    kubectl rollout restart deployment expense-tracker
+                    echo "Restarting Deployment..."
+
+                    kubectl rollout restart deployment/expense-tracker
+
+                    echo "Waiting for Rollout..."
 
                     kubectl rollout status deployment/expense-tracker
-                '''
+
+                    '''
+                }
             }
         }
 
@@ -137,13 +178,12 @@ pipeline {
 
                 sh '''
                     kubectl get pods
-
                     kubectl get deployments
-
                     kubectl get services
                 '''
             }
         }
+
     }
 
     post {
@@ -154,16 +194,18 @@ pipeline {
             echo 'Build Completed Successfully'
             echo 'Docker Image Built'
             echo 'Docker Image Pushed'
-            echo 'Application Deployed to Amazon EKS'
+            echo 'Application Successfully Deployed to Amazon EKS'
             echo '========================================'
+
         }
 
         failure {
 
             echo '========================================'
             echo 'Pipeline Failed'
-            echo 'Check Console Output'
+            echo 'Check Jenkins Console Output'
             echo '========================================'
+
         }
 
         always {
@@ -173,6 +215,9 @@ pipeline {
             sh '''
                 docker image prune -f || true
             '''
+
         }
+
     }
+
 }

@@ -4,15 +4,14 @@
 
 from flask import Flask
 from dotenv import load_dotenv
+from flask_jwt_extended import JWTManager
+
+import os
+
+from app.routes.auth_routes import auth
 from app.routes.expense_routes import expense
 from database.database import get_connection
 
-from flask_jwt_extended import JWTManager
-
-# Import Blueprint
-from app.routes.auth_routes import auth
-
-import os
 
 # =====================================================
 # LOAD ENVIRONMENT VARIABLES
@@ -26,22 +25,20 @@ load_dotenv()
 # =====================================================
 
 app = Flask(__name__)
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
-jwt = JWTManager(app)
 
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
+
+jwt = JWTManager(app)
 
 
 # =====================================================
 # REGISTER BLUEPRINTS
 # =====================================================
 
-# Register all routes with Flask.
-# Without this line, Flask will not know
-# about /users or /register APIs.
-
 app.register_blueprint(auth)
-
 app.register_blueprint(expense)
+
+
 # =====================================================
 # HOME ROUTE
 # =====================================================
@@ -51,7 +48,20 @@ def home():
 
     return {
         "message": "Expense Tracker Enterprise Running 🚀"
-    }
+    }, 200
+
+
+# =====================================================
+# HEALTH CHECK ROUTE
+# Used by Kubernetes Readiness & Liveness Probes
+# =====================================================
+
+@app.route("/health")
+def health():
+
+    return {
+        "status": "healthy"
+    }, 200
 
 
 # =====================================================
@@ -80,12 +90,8 @@ def test_db():
     # Return Response
     return {
         "db": result
-    }
+    }, 200
 
-
-# =====================================================
-# RUN FLASK SERVER
-# =====================================================
 
 # =====================================================
 # RUN FLASK SERVER
@@ -95,6 +101,6 @@ if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
-        port=5002,
+        port=5000,
         debug=True
     )
