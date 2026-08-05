@@ -118,8 +118,6 @@ pipeline {
 
                 echo '========== Deploying to Amazon EKS =========='
 
-      // withcredentail is used to find the jenkins locker 
-      
                 withCredentials([
 
                     string(credentialsId: 'MYSQL_HOST', variable: 'MYSQL_HOST'),
@@ -133,34 +131,48 @@ pipeline {
                 ]) {
 
                     sh '''
+                        export HOME=/var/lib/jenkins
+                        export KUBECONFIG=/var/lib/jenkins/.kube/config
+                        export AWS_DEFAULT_REGION=ap-south-1
 
-                    echo "Deleting old Kubernetes Secret..."
+                        echo "========== DEBUG =========="
+                        whoami
+                        echo "HOME=$HOME"
+                        echo "KUBECONFIG=$KUBECONFIG"
+                        echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
 
-                    kubectl delete secret expense-tracker-secret --ignore-not-found
+                        aws --version
+                        aws sts get-caller-identity
 
-                    echo "Creating Kubernetes Secret..."
+                        kubectl config current-context
+                        kubectl get nodes
 
-                    kubectl create secret generic expense-tracker-secret \
-                      --from-literal=MYSQL_HOST="$MYSQL_HOST" \
-                      --from-literal=MYSQL_USER="$MYSQL_USER" \
-                      --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
-                      --from-literal=MYSQL_DB="$MYSQL_DB" \
-                      --from-literal=JWT_SECRET_KEY="$JWT_SECRET_KEY" \
-                      --from-literal=AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
-                      --from-literal=AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+                        echo "Deleting old Kubernetes Secret..."
 
-                    echo "Applying Kubernetes Manifests..."
+                        kubectl delete secret expense-tracker-secret --ignore-not-found
 
-                    kubectl apply -f kubernetes/
+                        echo "Creating Kubernetes Secret..."
 
-                    echo "Restarting Deployment..."
+                        kubectl create secret generic expense-tracker-secret \
+                          --from-literal=MYSQL_HOST="$MYSQL_HOST" \
+                          --from-literal=MYSQL_USER="$MYSQL_USER" \
+                          --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
+                          --from-literal=MYSQL_DB="$MYSQL_DB" \
+                          --from-literal=JWT_SECRET_KEY="$JWT_SECRET_KEY" \
+                          --from-literal=AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+                          --from-literal=AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 
-                    kubectl rollout restart deployment/expense-tracker
+                        echo "Applying Kubernetes Manifests..."
 
-                    echo "Waiting for Rollout..."
+                        kubectl apply -f kubernetes/
 
-                    kubectl rollout status deployment/expense-tracker
+                        echo "Restarting Deployment..."
 
+                        kubectl rollout restart deployment/expense-tracker
+
+                        echo "Waiting for Rollout..."
+
+                        kubectl rollout status deployment/expense-tracker
                     '''
                 }
             }
@@ -177,6 +189,10 @@ pipeline {
                 echo '========== Kubernetes Health Check =========='
 
                 sh '''
+                    export HOME=/var/lib/jenkins
+                    export KUBECONFIG=/var/lib/jenkins/.kube/config
+                    export AWS_DEFAULT_REGION=ap-south-1
+
                     kubectl get pods
                     kubectl get deployments
                     kubectl get services
