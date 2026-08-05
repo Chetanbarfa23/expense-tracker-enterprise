@@ -124,9 +124,7 @@ pipeline {
                     string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
                     string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD'),
                     string(credentialsId: 'MYSQL_DB', variable: 'MYSQL_DB'),
-                    string(credentialsId: 'JWT_SECRET_KEY', variable: 'JWT_SECRET_KEY'),
-                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                    string(credentialsId: 'JWT_SECRET_KEY', variable: 'JWT_SECRET_KEY')
 
                 ]) {
 
@@ -139,7 +137,6 @@ pipeline {
                         whoami
                         echo "HOME=$HOME"
                         echo "KUBECONFIG=$KUBECONFIG"
-                        echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
 
                         aws --version
                         aws sts get-caller-identity
@@ -158,9 +155,7 @@ pipeline {
                           --from-literal=MYSQL_USER="$MYSQL_USER" \
                           --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
                           --from-literal=MYSQL_DB="$MYSQL_DB" \
-                          --from-literal=JWT_SECRET_KEY="$JWT_SECRET_KEY" \
-                          --from-literal=AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
-                          --from-literal=AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+                          --from-literal=JWT_SECRET_KEY="$JWT_SECRET_KEY"
 
                         echo "Applying Kubernetes Manifests..."
 
@@ -191,7 +186,6 @@ pipeline {
                 sh '''
                     export HOME=/var/lib/jenkins
                     export KUBECONFIG=/var/lib/jenkins/.kube/config
-                    export AWS_DEFAULT_REGION=ap-south-1
 
                     kubectl get pods
                     kubectl get deployments
