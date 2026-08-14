@@ -5,9 +5,9 @@ metadata:
   name: expense-tracker-config
 
 data:
-  MYSQL_HOST: "mysql"
-  MYSQL_USER: "root"
-  MYSQL_DB: "expense_tracker_enterprise"
+  MYSQL_HOST: "expense-tracker-db.cn2euom2kyi3.ap-south-1.rds.amazonaws.com"
+  MYSQL_USER: "expenseadmin"
+  MYSQL_DB: "expense_tracker"
 
   AWS_REGION: "ap-south-1"
   S3_BUCKET: "expense-tracker-bucket"

@@ -15,3 +15,10 @@ __pycache__/
 .DS_Store
 
 # this all files shoul not go in github due to security issue that why we add in this .gitignore
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+terraform/.terraform.lock.hcl

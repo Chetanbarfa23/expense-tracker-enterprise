@@ -1,24 +1,166 @@
-# API version for Service
+# ============================================================
+# Kubernetes Service for Expense Tracker
+# ============================================================
+#
+# Purpose:
+# A Service provides a stable network endpoint for our Pods.
+#
+# Our Pods can be destroyed and recreated with different IPs.
+# The Service continues to provide a stable endpoint.
+#
+# Since we use type: LoadBalancer, AWS will create an
+# external Load Balancer so users can access our application.
+#
+# Traffic Flow:
+#
+# User
+#   │
+#   ▼
+# AWS Load Balancer :80
+#   │
+#   ▼
+# Kubernetes Service :80
+#   │
+#   ▼
+# Expense Tracker Pod :5000
+#   │
+#   ▼
+# Flask Application
+#
+# ============================================================
+
+
+# Kubernetes API version for Service
 apiVersion: v1
 
-# Create a Service
+
+# Resource type
+# We are creating a Kubernetes Service
 kind: Service
 
+
+# ============================================================
+# Metadata
+# ============================================================
+
 metadata:
-  # Service name.                              #.In service we use loadbalancer for ips maintain so user can not face any problem when any pod get dimolish
+
+  # Name of our Kubernetes Service
   name: expense-tracker-service
+
+
+# ============================================================
+# Service Specification
+# ============================================================
 
 spec:
 
-  # Expose the app to the outside world
+  # ----------------------------------------------------------
+  # Service Type
+  # ----------------------------------------------------------
+  #
+  # LoadBalancer tells the cloud provider (AWS) to create
+  # an external Load Balancer for this Service.
+  #
+  # This allows users on the Internet to access our application.
+  #
   type: LoadBalancer
 
-  # Connect to Pods having this label
+
+  # ----------------------------------------------------------
+  # Pod Selector
+  # ----------------------------------------------------------
+  #
+  # The Service sends traffic to Pods having this label:
+  #
+  #     app: expense-tracker
+  #
+  # This MUST match the label in deployment.yaml:
+  #
+  #     labels:
+  #       app: expense-tracker
+  #
   selector:
+
     app: expense-tracker
+
+
+  # ==========================================================
+  # Ports
+  # ==========================================================
 
   ports:
 
-    # External Port → Internal Port
-    - port: 80          # Clients access on Port 80
-      targetPort: 5000  # Forward traffic to Pod Port 5000
+    # --------------------------------------------------------
+    # protocol
+    # --------------------------------------------------------
+    #
+    # We are using TCP for HTTP traffic.
+    #
+    - protocol: TCP
+
+      # ------------------------------------------------------
+      # Service Port
+      # ------------------------------------------------------
+      #
+      # Port exposed by the Kubernetes Service.
+      #
+      # Users access:
+      #
+      #     Load Balancer :80
+      #
+      port: 80
+
+
+      # ------------------------------------------------------
+      # Target Port
+      # ------------------------------------------------------
+      #
+      # Port where the Flask application is actually running
+      # inside the Pod.
+      #
+      # Our Dockerfile exposes port 5000 and run.py starts
+      # Flask on port 5000.
+      #
+      targetPort: 5000
+
+
+# ============================================================
+# FINAL TRAFFIC FLOW
+# ============================================================
+#
+# Internet User
+#       │
+#       ▼
+# AWS Load Balancer
+#       │
+#       │ Port 80
+#       ▼
+# Kubernetes Service
+#       │
+#       │ Finds Pods with:
+#       │ app = expense-tracker
+#       ▼
+# Expense Tracker Pod
+#       │
+#       │ Port 5000
+#       ▼
+# Flask Application
+#
+# ============================================================
+#
+# IMPORTANT:
+#
+# port: 80
+#     = Service-facing port
+#
+# targetPort: 5000
+#     = Application/Pod port
+#
+# selector:
+#     = Determines which Pods receive the traffic
+#
+# type: LoadBalancer
+#     = Creates an external AWS Load Balancer
+#
+# ============================================================

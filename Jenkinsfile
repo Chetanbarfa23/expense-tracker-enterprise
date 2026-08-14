@@ -101,7 +101,7 @@ pipeline {
 
                 echo '========== Pushing Docker Image =========='
 
-                sh '''
+                sh '''sed -i '' 's#080019754331.dkr.ecr.ap-south-1.amazonaws.com/expense-tracker:v1#chetan8889/expense-tracker-enterprise:latest#' kubernetes/deployment.yaml
                     docker push ${IMAGE_NAME}:${BUILD_NUMBER}
                     docker push ${IMAGE_NAME}:latest
                 '''
