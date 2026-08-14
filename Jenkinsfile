@@ -1,76 +1,46 @@
 // ============================================================
-// EXPENSE TRACKER ENTERPRISE
-// CI/CD PIPELINE
-//
-// Flow:
+// EXPENSE TRACKER ENTERPRISE - CI/CD PIPELINE
 //
 // GitHub
 //   ↓
 // Jenkins
 //   ↓
-// Build Docker Image
+// Docker Build
 //   ↓
-// Login to AWS ECR
+// AWS ECR
 //   ↓
-// Push Docker Image to ECR
-//   ↓
-// Deploy Image to Amazon EKS
+// Amazon EKS
 //   ↓
 // Kubernetes Secret + ConfigMap
 //   ↓
 // Rolling Deployment
 //   ↓
 // Health Check
-//
 // ============================================================
-
 
 pipeline {
 
-    // ========================================================
-    // TASK 1: JENKINS AGENT
-    // ========================================================
-
+    // Jenkins agent
     agent any
 
-
-    // ========================================================
-    // TASK 2: GLOBAL ENVIRONMENT VARIABLES
-    //
-    // These values are available throughout the pipeline.
-    // ========================================================
-
+    // Global variables
     environment {
 
-        // Application name
         APP_NAME = "expense-tracker-enterprise"
 
-        // AWS region where ECR and EKS are running
         AWS_REGION = "ap-south-1"
 
-        // AWS ECR registry
         ECR_REGISTRY = "080019754331.dkr.ecr.ap-south-1.amazonaws.com"
 
-        // Complete ECR repository
         IMAGE_NAME = "080019754331.dkr.ecr.ap-south-1.amazonaws.com/expense-tracker"
 
-        // Deployment environment
         DEPLOY_ENV = "DEV"
     }
 
-
-    // ========================================================
-    // PIPELINE STAGES
-    // ========================================================
-
     stages {
 
-
         // ====================================================
-        // TASK 3: VERIFY JENKINS WORKSPACE
-        //
-        // Check where Jenkins is running and what files
-        // Jenkins received from GitHub.
+        // TASK 1: WORKSPACE
         // ====================================================
 
         stage('Workspace Verification') {
@@ -88,9 +58,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 4: DISPLAY BUILD INFORMATION
-        //
-        // Useful for debugging and identifying builds.
+        // TASK 2: BUILD INFORMATION
         // ====================================================
 
         stage('Build Information') {
@@ -109,14 +77,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 5: VERIFY REQUIRED TOOLS
-        //
-        // Jenkins needs:
-        //
-        // Python
-        // Docker
-        // AWS CLI
-        // kubectl
+        // TASK 3: VERIFY TOOLS
         // ====================================================
 
         stage('Verify Tools') {
@@ -136,18 +97,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 6: BUILD DOCKER IMAGE
-        //
-        // Application source code
-        //        ↓
-        // Dockerfile
-        //        ↓
-        // Docker Image
-        //
-        // Example:
-        //
-        // expense-tracker:25
-        // expense-tracker:latest
+        // TASK 4: BUILD DOCKER IMAGE
         // ====================================================
 
         stage('Build Docker Image') {
@@ -169,9 +119,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 7: VERIFY DOCKER IMAGE
-        //
-        // Display images created on Jenkins machine.
+        // TASK 5: VERIFY IMAGE
         // ====================================================
 
         stage('List Docker Images') {
@@ -188,19 +136,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 8: LOGIN TO AWS ECR
-        //
-        // Jenkins
-        //    ↓
-        // AWS ECR Authentication
-        //
-        // IMPORTANT:
-        //
-        // We are NOT using Docker Hub.
-        //
-        // We are using:
-        //
-        // AWS ECR
+        // TASK 6: LOGIN TO AWS ECR
         // ====================================================
 
         stage('ECR Login') {
@@ -222,16 +158,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 9: PUSH DOCKER IMAGE TO AWS ECR
-        //
-        // Docker Image
-        //       ↓
-        // AWS ECR
-        //
-        // Two tags are pushed:
-        //
-        // BUILD NUMBER
-        // latest
+        // TASK 7: PUSH IMAGE TO ECR
         // ====================================================
 
         stage('Push Image to ECR') {
@@ -250,21 +177,12 @@ pipeline {
 
 
         // ====================================================
-        // TASK 10: DEPLOY APPLICATION TO AMAZON EKS
-        //
-        // Only deploy from main branch.
-        //
-        // Docker Image
-        //       ↓
-        // ECR
-        //       ↓
-        // EKS
+        // TASK 8: DEPLOY TO AMAZON EKS
         // ====================================================
 
         stage('Deploy to Amazon EKS') {
 
             when {
-
                 branch 'main'
             }
 
@@ -272,16 +190,7 @@ pipeline {
 
                 echo '========== DEPLOYING TO AMAZON EKS =========='
 
-
-                // =================================================
-                // TASK 10A: LOAD DATABASE/JWT SECRETS
-                //
-                // Jenkins credentials are NOT written directly
-                // inside Jenkinsfile.
-                //
-                // Jenkins injects them temporarily.
-                // =================================================
-
+                // Load secrets from Jenkins
                 withCredentials([
 
                     string(
@@ -311,50 +220,35 @@ pipeline {
 
                 ]) {
 
-
                     sh '''
 
-                        // =================================================
-                        // TASK 10B: CONFIGURE JENKINS KUBERNETES ACCESS
-                        // =================================================
+                        # Configure Jenkins Kubernetes access
 
                         export HOME=/var/lib/jenkins
-
                         export KUBECONFIG=/var/lib/jenkins/.kube/config
 
 
-                        // =================================================
-                        // TASK 10C: VERIFY AWS IDENTITY
-                        // =================================================
+                        # Verify AWS identity
 
                         echo "========== AWS IDENTITY =========="
 
                         aws sts get-caller-identity
 
 
-                        // =================================================
-                        // TASK 10D: VERIFY EKS CONNECTION
-                        // =================================================
+                        # Verify EKS connection
 
                         echo "========== KUBERNETES CLUSTER =========="
 
                         kubectl config current-context
-
                         kubectl get nodes
 
 
-                        // =================================================
-                        // TASK 10E: UPDATE KUBERNETES SECRET
-                        //
-                        // Database password and JWT secret are stored
-                        // in Kubernetes Secret.
-                        // =================================================
+                        # Create Kubernetes Secret
 
                         echo "========== UPDATING KUBERNETES SECRET =========="
 
                         kubectl delete secret expense-tracker-secret \
                           --ignore-not-found
-
 
                         kubectl create secret generic expense-tracker-secret \
                           --from-literal=MYSQL_HOST="$MYSQL_HOST" \
@@ -364,38 +258,14 @@ pipeline {
                           --from-literal=JWT_SECRET_KEY="$JWT_SECRET_KEY"
 
 
-                        // =================================================
-                        // TASK 10F: APPLY KUBERNETES CONFIGURATION
-                        //
-                        // Applies:
-                        //
-                        // deployment.yaml
-                        // service.yaml
-                        // configmap.yaml
-                        // hpa.yaml
-                        // etc.
-                        // =================================================
+                        # Apply Kubernetes manifests
 
                         echo "========== APPLYING KUBERNETES MANIFESTS =========="
 
                         kubectl apply -f kubernetes/
 
 
-                        // =================================================
-                        // TASK 10G: UPDATE APPLICATION IMAGE
-                        //
-                        // Tell Kubernetes:
-                        //
-                        // Use the newly built image from ECR.
-                        //
-                        // Example:
-                        //
-                        // ECR
-                        //  ↓
-                        // expense-tracker:26
-                        //  ↓
-                        // EKS Pod
-                        // =================================================
+                        # Update deployment with new ECR image
 
                         echo "========== UPDATING DEPLOYMENT IMAGE =========="
 
@@ -403,19 +273,7 @@ pipeline {
                           expense-tracker=${IMAGE_NAME}:${BUILD_NUMBER}
 
 
-                        // =================================================
-                        // TASK 10H: WAIT FOR ROLLING UPDATE
-                        //
-                        // Kubernetes:
-                        //
-                        // Old Pod
-                        //     +
-                        // New Pod
-                        //     ↓
-                        // New Pod Ready
-                        //     ↓
-                        // Old Pod Removed
-                        // =================================================
+                        # Wait for rolling deployment
 
                         echo "========== WAITING FOR ROLLOUT =========="
 
@@ -429,21 +287,12 @@ pipeline {
 
 
         // ====================================================
-        // TASK 11: KUBERNETES HEALTH CHECK
-        //
-        // Verify:
-        //
-        // Pods
-        // Deployment
-        // Service / Load Balancer
-        // HPA
-        // Running Docker image
+        // TASK 9: HEALTH CHECK
         // ====================================================
 
         stage('Health Check') {
 
             when {
-
                 branch 'main'
             }
 
@@ -453,57 +302,41 @@ pipeline {
 
                 sh '''
 
-                    // =================================================
-                    // TASK 11A: KUBERNETES CONFIG
-                    // =================================================
+                    # Kubernetes access
 
                     export HOME=/var/lib/jenkins
-
                     export KUBECONFIG=/var/lib/jenkins/.kube/config
 
 
-                    // =================================================
-                    // TASK 11B: CHECK PODS
-                    // =================================================
+                    # Pods
 
                     echo "========== PODS =========="
 
                     kubectl get pods
 
 
-                    // =================================================
-                    // TASK 11C: CHECK DEPLOYMENT
-                    // =================================================
+                    # Deployment
 
                     echo "========== DEPLOYMENT =========="
 
                     kubectl get deployment expense-tracker
 
 
-                    // =================================================
-                    // TASK 11D: CHECK SERVICE / LOAD BALANCER
-                    // =================================================
+                    # Service / Load Balancer
 
                     echo "========== SERVICE =========="
 
                     kubectl get svc
 
 
-                    // =================================================
-                    // TASK 11E: CHECK HORIZONTAL POD AUTOSCALER
-                    // =================================================
+                    # Horizontal Pod Autoscaler
 
                     echo "========== HPA =========="
 
                     kubectl get hpa
 
 
-                    // =================================================
-                    // TASK 11F: VERIFY RUNNING IMAGE
-                    //
-                    // This confirms EKS is actually running the
-                    // image that Jenkins just pushed.
-                    // =================================================
+                    # Verify running image
 
                     echo "========== CURRENT IMAGE =========="
 
@@ -521,11 +354,6 @@ pipeline {
 
     post {
 
-
-        // ====================================================
-        // TASK 12: SUCCESS MESSAGE
-        // ====================================================
-
         success {
 
             echo '========================================'
@@ -542,10 +370,6 @@ pipeline {
         }
 
 
-        // ====================================================
-        // TASK 13: FAILURE MESSAGE
-        // ====================================================
-
         failure {
 
             echo '========================================'
@@ -557,12 +381,6 @@ pipeline {
             echo '========================================'
         }
 
-
-        // ====================================================
-        // TASK 14: CLEANUP
-        //
-        // Remove unused Docker images from Jenkins.
-        // ====================================================
 
         always {
 
