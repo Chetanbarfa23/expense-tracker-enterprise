@@ -5,6 +5,8 @@
 //   ↓
 // Jenkins
 //   ↓
+// Run Tests
+//   ↓
 // Docker Build
 //   ↓
 // AWS ECR
@@ -20,10 +22,8 @@
 
 pipeline {
 
-    // Jenkins agent
     agent any
 
-    // Global variables
     environment {
 
         APP_NAME = "expense-tracker-enterprise"
@@ -97,7 +97,24 @@ pipeline {
 
 
         // ====================================================
-        // TASK 4: BUILD DOCKER IMAGE
+        // TASK 4: RUN AUTOMATED TESTS
+        // ====================================================
+
+        stage('Run Tests') {
+
+            steps {
+
+                echo '========== RUNNING AUTOMATED TESTS =========='
+
+                sh '''
+                    python3 -m pytest -v
+                '''
+            }
+        }
+
+
+        // ====================================================
+        // TASK 5: BUILD DOCKER IMAGE
         // ====================================================
 
         stage('Build Docker Image') {
@@ -119,7 +136,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 5: VERIFY IMAGE
+        // TASK 6: VERIFY IMAGE
         // ====================================================
 
         stage('List Docker Images') {
@@ -136,7 +153,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 6: LOGIN TO AWS ECR
+        // TASK 7: LOGIN TO AWS ECR
         // ====================================================
 
         stage('ECR Login') {
@@ -158,7 +175,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 7: PUSH IMAGE TO ECR
+        // TASK 8: PUSH IMAGE TO ECR
         // ====================================================
 
         stage('Push Image to ECR') {
@@ -177,7 +194,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 8: DEPLOY TO AMAZON EKS
+        // TASK 9: DEPLOY TO AMAZON EKS
         // ====================================================
 
         stage('Deploy to Amazon EKS') {
@@ -190,7 +207,6 @@ pipeline {
 
                 echo '========== DEPLOYING TO AMAZON EKS =========='
 
-                // Load secrets from Jenkins
                 withCredentials([
 
                     string(
@@ -222,7 +238,7 @@ pipeline {
 
                     sh '''
 
-                        # Configure Jenkins Kubernetes access
+                        # Configure Kubernetes access
 
                         export HOME=/var/lib/jenkins
                         export KUBECONFIG=/var/lib/jenkins/.kube/config
@@ -265,7 +281,7 @@ pipeline {
                         kubectl apply -f kubernetes/
 
 
-                        # Update deployment with new ECR image
+                        # Update deployment image
 
                         echo "========== UPDATING DEPLOYMENT IMAGE =========="
 
@@ -287,7 +303,7 @@ pipeline {
 
 
         // ====================================================
-        // TASK 9: HEALTH CHECK
+        // TASK 10: HEALTH CHECK
         // ====================================================
 
         stage('Health Check') {
@@ -360,6 +376,7 @@ pipeline {
             echo '          BUILD SUCCESSFUL'
             echo '========================================'
 
+            echo 'Automated Tests Passed'
             echo 'Docker Image Built'
             echo 'Image Pushed to AWS ECR'
             echo 'Application Deployed to Amazon EKS'

@@ -1,24 +1,37 @@
 # Python Virtual Environment
 venv/
+.venv/
 
-# Environment Variables
+# Environment Variables / Secrets
 .env
+.env.*
+!.env.example
 
 # Python Cache
 __pycache__/
 *.pyc
+*.pyo
 
 # Log Files
 *.log
+logs/
 
-# macOS System Files
+# macOS
 .DS_Store
-
-# this all files shoul not go in github due to security issue that why we add in this .gitignore
 
 # Terraform
 terraform/.terraform/
 terraform/*.tfstate
 terraform/*.tfstate.*
-terraform/terraform.tfvars
-terraform/.terraform.lock.hcl
+terraform/*.tfplan
+terraform/*.tfvars
+terraform/*.tfvars.json
+terraform/crash.log
+
+# Terraform lock file
+# KEEP this file in Git if you want reproducible provider versions.
+# terraform/.terraform.lock.hcl
+
+# IDE
+.vscode/
+.idea/
