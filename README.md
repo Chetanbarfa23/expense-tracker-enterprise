@@ -12,7 +12,8 @@
 
 A containerized Flask backend demonstrating a real cloud-native DevOps workflow: **GitHub Actions** runs continuous integration (automated tests) on every push, and **Jenkins** handles continuous delivery — building the Docker image, pushing it to Amazon ECR, and deploying it to Amazon EKS.
 
----
+--->>>>
+
 
 ## Table of Contents
 
